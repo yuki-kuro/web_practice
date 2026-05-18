@@ -4,49 +4,71 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import model.Product;
 import model.ProductDAO;
 
+/**
+ * 売上登録画面の表示（GET）と登録処理（POST）を行うサーブレット。
+ * 追加ボタンでセッションの一時リストに売上データを積み、登録ボタンで一括でDBにコミットする。
+ */
 @WebServlet("/RegisterSales")
 public class RegisterSales extends HttpServlet {
-	List<Product> tempList = new ArrayList<>();
 	ProductDAO dao = new ProductDAO();
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		String csrfToken = UUID.randomUUID().toString();
+		request.getSession().setAttribute("csrfToken", csrfToken);
+		request.setAttribute("csrfToken", csrfToken);
+		request.setAttribute("today", new Date());
+		request.setAttribute("productList", dao.findAll());
+		request.setAttribute("salesList", dao.findSales());
+		request.getRequestDispatcher("/WEB-INF/view/registerSales.jsp").forward(request, response);
+	}
+
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		request.setCharacterEncoding("UTF-8");
+		String sessionToken = (String) request.getSession().getAttribute("csrfToken");
+		String requestToken = request.getParameter("csrfToken");
+		if (sessionToken == null || !sessionToken.equals(requestToken)) {
+			response.sendError(HttpServletResponse.SC_FORBIDDEN, "不正なリクエストです");
+			return;
+		}
+		request.getSession().removeAttribute("csrfToken");
+
 		Date today = new Date();
-		// 売上日を保存
-		request.setAttribute("today", today);
-		// 削除されていない商品リストを取得する
-		List<Product> productList = dao.findAll();
-		request.setAttribute("productList", productList);
-		// 売上日の売上リストを取得する
-		List<Product> salesList = dao.findSales();
-		request.setAttribute("salesList", salesList);
-		// 追加ボタンがクリックされたときの処理
+		HttpSession session = request.getSession();
+		List<Product> tempList = (List<Product>) session.getAttribute("tempList");
+		if (tempList == null) {
+			tempList = new ArrayList<>();
+		}
+
 		String add = request.getParameter("add");
-		if (add != null) {
+		if ("追加".equals(add)) {
 			List<String> errorMessages = new ArrayList<>();
 			// 商品名必須チェック
 			String stringProductCodeToAdd = request.getParameter("productCodeToAdd");
 			int productCodeToAdd = 0;
-			if (stringProductCodeToAdd.equals("")) {
+			if ("".equals(stringProductCodeToAdd)) {
 				errorMessages.add("商品名が選択されていません。");
 			} else {
 				productCodeToAdd = Integer.parseInt(stringProductCodeToAdd);
 			}
-			
+
 			// 数量必須チェックと範囲チェック
 			String stringQuantity = request.getParameter("quantityToAdd");
 			int intQuantity = 0;
-			if (stringQuantity.equals("")) {
+			if ("".equals(stringQuantity)) {
 				errorMessages.add("数量を入力してください");
 			} else {
 				try {
@@ -58,32 +80,27 @@ public class RegisterSales extends HttpServlet {
 					errorMessages.add("整数ではない値が入力されました｡整数を入力してください");
 				}
 			}
-			
-			if (errorMessages.size() != 0) {	//エラーが有るときの処理
+
+			if (errorMessages.size() != 0) {
 				request.setAttribute("errorMessages", errorMessages);
-			} else {	//エラーが無いときの処理
+			} else {
 				Product productDetailsToAdd = dao.getProductDetails(productCodeToAdd);
 				productDetailsToAdd.setQuantity(intQuantity);
 				tempList.add(productDetailsToAdd);
 			}
-			request.setAttribute("tempList", tempList);
+			session.setAttribute("tempList", tempList);
+			String newToken = UUID.randomUUID().toString();
+			request.getSession().setAttribute("csrfToken", newToken);
+			request.setAttribute("csrfToken", newToken);
+			request.setAttribute("today", new Date());
+			request.setAttribute("productList", dao.findAll());
+			request.setAttribute("salesList", dao.findSales());
+			request.getRequestDispatcher("/WEB-INF/view/registerSales.jsp").forward(request, response);
+		} else {
+			dao.registerSalesAll(tempList, today);
+			tempList.clear();
+			doGet(request, response);
 		}
-		request.getRequestDispatcher("/WEB-INF/view/registerSales.jsp").forward(request, response);
-	}
-
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		request.setCharacterEncoding("UTF-8");
-		Date today = new Date();
-		for (Product p : tempList) {
-			if (dao.existSales(p.getProductCode(), today)) {
-				dao.updateSales(p.getQuantity(), today, p.getProductCode());
-			} else {
-				dao.insertSales(p.getProductCode(), p.getQuantity());
-			}
-		}
-		tempList.clear();
-		doGet(request, response);
 	}
 
 }

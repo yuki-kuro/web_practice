@@ -15,6 +15,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import model.ProductDAO;
 
+/**
+ * 売上集計CSVのダウンロードを行うサーブレット。
+ * 全期間の商品別集計と、指定年月の商品別集計の2種類に対応する。
+ */
 @WebServlet("/CSVDownload")
 public class CSVDownload extends HttpServlet {
 	@Override
@@ -38,21 +42,21 @@ public class CSVDownload extends HttpServlet {
 				} else {
 					SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM");
 					Date formatMonth = simpleDateFormat.parse(month);
-					String lowerMonth = "2020-01";
-					Date formatLowerMonth = simpleDateFormat.parse(lowerMonth);
+					final String LOWER_MONTH = "2020-01";
+					Date formatLowerMonth = simpleDateFormat.parse(LOWER_MONTH);
 					Date today = new Date();
 					String stringToday = simpleDateFormat.format(today);
 					if (today.before(formatMonth)) {
 						errorMessages.add(
 								"未来の年月が入力されました。");
 						errorMessages.add(
-								lowerMonth + "以降" + stringToday + "以前の年月を指定してください。");
+								LOWER_MONTH + "以降" + stringToday + "以前の年月を指定してください。");
 					}
 					if (formatMonth.before(formatLowerMonth)) {
 						errorMessages.add(
 								"古すぎる年月が入力されました｡");
 						errorMessages.add(
-								lowerMonth + "以降" + stringToday + "以前の年月を指定してください。");
+								LOWER_MONTH + "以降" + stringToday + "以前の年月を指定してください。");
 					}
 				}
 				if (errorMessages.size() == 0) {

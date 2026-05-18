@@ -1,5 +1,15 @@
-build/
-*.class
+### Eclipse ###
 .classpath
 .project
 .settings/
+build/
+
+### Maven ###
+target/
+*.war
+
+### Credentials ###
+src/main/webapp/META-INF/context.xml
+
+### Personal notes ###
+docs/git.txt

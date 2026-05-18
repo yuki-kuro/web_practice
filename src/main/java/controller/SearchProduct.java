@@ -13,6 +13,10 @@ import javax.servlet.http.HttpServletResponse;
 import model.Product;
 import model.ProductDAO;
 
+/**
+ * 商品検索画面の表示と検索処理を行うサーブレット。
+ * keyword パラメータ未指定時は全件表示、0件ヒット時もエラーメッセージを出しつつ全件表示する。
+ */
 @WebServlet("/SearchProduct")
 public class SearchProduct extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)

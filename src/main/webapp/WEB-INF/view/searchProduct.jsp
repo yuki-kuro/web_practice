@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.List"%>
 <%@ page import="model.Product"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%
 List<Product> products = (List<Product>) request.getAttribute("products");
 List<String> errorMessages = (List<String>) request.getAttribute("errorMessages");
@@ -39,9 +40,9 @@ List<String> errorMessages = (List<String>) request.getAttribute("errorMessages"
 		for (Product p : products) {
 		%>
 		<tr>
-			<td><%=String.format("%03d", new Integer(p.getProductCode()))%></td>
-			<td><%=p.getProductName()%></td>
-			<td><%=String.format("%,d", new Integer(p.getPrice()))%></td>
+			<td><%=String.format("%03d", p.getProductCode())%></td>
+			<td><c:out value="<%=p.getProductName()%>"/></td>
+			<td><%=String.format("%,d", p.getPrice())%></td>
 			<td>
 				<form action="/web_practice/EditProduct" method="get">
 					<input type="hidden" name="productCode" value="<%=p.getProductCode()%>">

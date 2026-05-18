@@ -3,6 +3,7 @@ package controller;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -12,30 +13,42 @@ import javax.servlet.http.HttpServletResponse;
 
 import model.ProductDAO;
 
+/**
+ * 商品登録画面の表示（GET）と登録処理（POST）を行うサーブレット。
+ */
 @WebServlet("/RegisterProduct")
 public class RegisterProduct extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		String csrfToken = UUID.randomUUID().toString();
+		request.getSession().setAttribute("csrfToken", csrfToken);
+		request.setAttribute("csrfToken", csrfToken);
 		request.getRequestDispatcher("/WEB-INF/view/registerProduct.jsp").forward(request, response);
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
+		String sessionToken = (String) request.getSession().getAttribute("csrfToken");
+		String requestToken = request.getParameter("csrfToken");
+		if (sessionToken == null || !sessionToken.equals(requestToken)) {
+			response.sendError(HttpServletResponse.SC_FORBIDDEN, "不正なリクエストです");
+			return;
+		}
+		request.getSession().removeAttribute("csrfToken");
+
 		String registerProductName = request.getParameter("registerProductName");
 		String registerPriceString = request.getParameter("registerPrice");
-		registerProductName = escapeHtml(registerProductName);
-		registerPriceString = escapeHtml(registerPriceString);
-		
+
 		List<String> errorMessages = new ArrayList<>();
-		if (registerProductName.length() == 0) {
+
+		if (registerProductName == null || registerProductName.isEmpty()) {
 			errorMessages.add("商品名を入力してください");
-		}
-		if (registerProductName.length() > 50) {
+		} else if (registerProductName.length() > 50) {
 			errorMessages.add("商品名は50字以内で入力してください｡");
 		}
 		int registerPriceInt = 0;
-		if (registerPriceString.equals("")) {
+		if ("".equals(registerPriceString)) {
 			errorMessages.add("単価を入力してください");
 		} else {
 			try {
@@ -49,6 +62,9 @@ public class RegisterProduct extends HttpServlet {
 		}
 
 		if (errorMessages.size() != 0) {
+			String newToken = UUID.randomUUID().toString();
+			request.getSession().setAttribute("csrfToken", newToken);
+			request.setAttribute("csrfToken", newToken);
 			request.setAttribute("errorMessages", errorMessages);
 			request.getRequestDispatcher("/WEB-INF/view/registerProduct.jsp").forward(request, response);
 		} else {
@@ -58,36 +74,4 @@ public class RegisterProduct extends HttpServlet {
 		}
 	}
 
-	public static String escapeHtml(String input) {
-		if (input == null) {
-			return null;
-		}
-		StringBuilder escaped = new StringBuilder();
-		for (char c : input.toCharArray()) {
-			switch (c) {
-			case '<':
-				escaped.append("&lt;");
-				break;
-			case '>':
-				escaped.append("&gt;");
-				break;
-			case '&':
-				escaped.append("&amp;");
-				break;
-			case '"':
-				escaped.append("&quot;");
-				break;
-			case '\'':
-				escaped.append("&#x27;");
-				break;
-			case '/':
-				escaped.append("&#x2F;");
-				break;
-			default:
-				escaped.append(c);
-				break;
-			}
-		}
-		return escaped.toString();
-	}
 }

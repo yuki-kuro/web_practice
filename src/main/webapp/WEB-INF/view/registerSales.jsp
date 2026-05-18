@@ -3,13 +3,15 @@
 <%@ page import="java.util.Date"%>
 <%@ page import="java.text.SimpleDateFormat"%>
 <%@ page import="model.Product"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%
 List<String> errorMessages = (List<String>) request.getAttribute("errorMessages");
 List<Product> productList = (List<Product>) request.getAttribute("productList");
-List<Product> tempList = (List<Product>) request.getAttribute("tempList");
+List<Product> tempList = (List<Product>) session.getAttribute("tempList");
 List<Product> salesList = (List<Product>) request.getAttribute("salesList");
 Date today = (Date) request.getAttribute("today");
 SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+String csrfToken = (String) request.getAttribute("csrfToken");
 %>
 <!DOCTYPE html>
 <html>
@@ -33,7 +35,7 @@ SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 		<tr>
 			<th>商品名</th>
 			<td>
-				<form action="/web_practice/RegisterSales" method="get">
+				<form action="/web_practice/RegisterSales" method="post">
 					<select name="productCodeToAdd">
 						<option value="" selected>選択してください</option>
 						<%
@@ -41,7 +43,7 @@ SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 						%>
 						<option value="<%=p.getProductCode()%>">
 							<%=p.getProductCode()%> :
-							<%=p.getProductName()%>
+							<c:out value="<%=p.getProductName()%>"/>
 						</option>
 						<%
 						}
@@ -54,6 +56,7 @@ SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 			</td>
 		</tr>
 	</table>
+	<input type="hidden" name="csrfToken" value="<%=csrfToken%>">
 	<input type="submit" name="add" value="追加">
 	</form>
 	<form action="/web_practice/RegisterSales" method="post">
@@ -69,7 +72,7 @@ SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 		%>
 		<tr>
 			<td><%=p.getProductCode()%></td>
-			<td><%=p.getProductName()%></td>
+			<td><c:out value="<%=p.getProductName()%>"/></td>
 			<td><%=p.getQuantity()%></td>
 		</tr>
 		<%
@@ -77,7 +80,8 @@ SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 		}
 		%>
 	</table>
-	<input type="submit" value="登録">
+	<input type="hidden" name="csrfToken" value="<%=csrfToken%>">
+	<input type="submit" name="register" value="登録">
 	</form>
 		<table>
 			<tr>
@@ -91,7 +95,7 @@ SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 			%>
 			<tr>
 				<td><%=p.getProductCode()%></td>
-				<td><%=p.getProductName()%></td>
+				<td><c:out value="<%=p.getProductName()%>"/></td>
 				<td><%=p.getQuantity()%></td>
 			</tr>
 			<%
