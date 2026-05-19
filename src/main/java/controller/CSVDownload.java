@@ -30,13 +30,16 @@ public class CSVDownload extends HttpServlet {
 		try {
 			List<String> errorMessages = new ArrayList<>();
 			boolean downloaded = false;
+			// ｢商品別売上集計CSV｣ボタンがクリックされた場合
 			if ("商品別売上集計CSV".equals(download)) {
 				if (dao.download(response)) {
 					downloaded = true;
 				} else {
 					errorMessages.add("対象データは0件です。");
 				}
+				// ｢指定年月商品別売上集計CSV｣ボタンがクリックされた場合
 			} else if ("指定年月商品別売上集計CSV".equals(download)) {
+				// 年月チェック
 				if (month == null || month.equals("")) {
 					errorMessages.add("年月が指定されていません。");
 				} else {
@@ -59,6 +62,7 @@ public class CSVDownload extends HttpServlet {
 								LOWER_MONTH + "以降" + stringToday + "以前の年月を指定してください。");
 					}
 				}
+
 				if (errorMessages.size() == 0) {
 					if (dao.downloadForPeriod(response, month)) {
 						downloaded = true;
@@ -68,6 +72,7 @@ public class CSVDownload extends HttpServlet {
 				}
 			}
 			if (!downloaded) {
+				// ダウンロード失敗の場合、自画面に遷移してエラーメッセージを表示
 				request.setAttribute("errorMessages", errorMessages);
 				request.getRequestDispatcher("/WEB-INF/view/CSVDownload.jsp").forward(request, response);
 			}

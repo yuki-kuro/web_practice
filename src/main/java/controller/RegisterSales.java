@@ -26,18 +26,22 @@ public class RegisterSales extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		// CSRF対策
 		String csrfToken = UUID.randomUUID().toString();
 		request.getSession().setAttribute("csrfToken", csrfToken);
 		request.setAttribute("csrfToken", csrfToken);
+
 		request.setAttribute("today", new Date());
 		request.setAttribute("productList", dao.findAll());
 		request.setAttribute("salesList", dao.findSales());
+		// 売上登録画面に遷移
 		request.getRequestDispatcher("/WEB-INF/view/registerSales.jsp").forward(request, response);
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
+		// CSRF対策
 		String sessionToken = (String) request.getSession().getAttribute("csrfToken");
 		String requestToken = request.getParameter("csrfToken");
 		if (sessionToken == null || !sessionToken.equals(requestToken)) {
@@ -56,7 +60,7 @@ public class RegisterSales extends HttpServlet {
 		String add = request.getParameter("add");
 		if ("追加".equals(add)) {
 			List<String> errorMessages = new ArrayList<>();
-			// 商品名必須チェック
+			// 商品名チェック
 			String stringProductCodeToAdd = request.getParameter("productCodeToAdd");
 			int productCodeToAdd = 0;
 			if ("".equals(stringProductCodeToAdd)) {
@@ -65,7 +69,7 @@ public class RegisterSales extends HttpServlet {
 				productCodeToAdd = Integer.parseInt(stringProductCodeToAdd);
 			}
 
-			// 数量必須チェックと範囲チェック
+			// 数量チェック
 			String stringQuantity = request.getParameter("quantityToAdd");
 			int intQuantity = 0;
 			if ("".equals(stringQuantity)) {
@@ -82,21 +86,27 @@ public class RegisterSales extends HttpServlet {
 			}
 
 			if (errorMessages.size() != 0) {
+				// エラーありの場合、エラーメッセージを生成
 				request.setAttribute("errorMessages", errorMessages);
 			} else {
+				// エラーなしの場合、一時リストを更新
 				Product productDetailsToAdd = dao.getProductDetails(productCodeToAdd);
 				productDetailsToAdd.setQuantity(intQuantity);
 				tempList.add(productDetailsToAdd);
 			}
 			session.setAttribute("tempList", tempList);
+			// CSRF対策
 			String newToken = UUID.randomUUID().toString();
 			request.getSession().setAttribute("csrfToken", newToken);
 			request.setAttribute("csrfToken", newToken);
+
 			request.setAttribute("today", new Date());
 			request.setAttribute("productList", dao.findAll());
 			request.setAttribute("salesList", dao.findSales());
+			// 自画面に遷移
 			request.getRequestDispatcher("/WEB-INF/view/registerSales.jsp").forward(request, response);
 		} else {
+			// ｢登録｣ボタンがクリックされた場合、一時リストをDBに一括登録し、GETリクエストすることで連続で登録できるようにする。
 			dao.registerSalesAll(tempList, today);
 			tempList.clear();
 			doGet(request, response);

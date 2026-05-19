@@ -31,6 +31,7 @@ public class SearchProduct extends HttpServlet {
 			errorMessages.add("50字以内で入力してください");
 			products = dao.findAll();
 		} else {
+			// 検索キーワードが50字以内で入力されていれば、検索を実行
 			products = dao.search(keyword);
 			if (products.size() == 0) {
 				errorMessages.add("検索結果は0件です｡");
@@ -39,6 +40,7 @@ public class SearchProduct extends HttpServlet {
 		}
 		request.setAttribute("errorMessages", errorMessages);
 		request.setAttribute("products", products);
+		// 商品検索画面に遷移
 		request.getRequestDispatcher("/WEB-INF/view/searchProduct.jsp").forward(request, response);
 	}
 }

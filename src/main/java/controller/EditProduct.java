@@ -27,15 +27,18 @@ public class EditProduct extends HttpServlet {
 		Product preEditProductData = dao.getProductDetails(productCode);
 		request.getSession().setAttribute("preEditProductData", preEditProductData);
 		request.setAttribute("productDataToChange", preEditProductData);
+		// CSRF対策
 		String csrfToken = UUID.randomUUID().toString();
 		request.getSession().setAttribute("csrfToken", csrfToken);
 		request.setAttribute("csrfToken", csrfToken);
+		// 商品編集画面に遷移
 		request.getRequestDispatcher("/WEB-INF/view/editProduct.jsp").forward(request, response);
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
+		// CSRF対策
 		String sessionToken = (String) request.getSession().getAttribute("csrfToken");
 		String requestToken = request.getParameter("csrfToken");
 		if (sessionToken == null || !sessionToken.equals(requestToken)) {
@@ -43,14 +46,15 @@ public class EditProduct extends HttpServlet {
 			return;
 		}
 		request.getSession().removeAttribute("csrfToken");
+
 		ProductDAO dao = new ProductDAO();
-		// リクエストパラメータ取得
 		String edit = request.getParameter("edit");
 		String productNameToChange = request.getParameter("productNameToChange");
 		String stringPriceToChange = request.getParameter("priceToChange");
 		Product preEditProductData = (Product) request.getSession().getAttribute("preEditProductData");
 		int productCodeToChange = preEditProductData.getProductCode();
 		List<String> errorMessages = new ArrayList<>();
+
 		// エラー処理
 		// 楽観的排他制御
 		String beforeUpdateDatetime = preEditProductData.getUpdateDatetime();
@@ -59,11 +63,15 @@ public class EditProduct extends HttpServlet {
 		if (!beforeUpdateDatetime.equals(afterUpdateDatetime)) {
 			errorMessages.add("この商品は他の人によって更新されています｡商品検索ページから再編集してください｡");
 		}
+
+		// 商品名チェック
 		if (productNameToChange == null || productNameToChange.isEmpty()) {
 			errorMessages.add("商品名を入力してください");
 		} else if (productNameToChange.length() > 50) {
 			errorMessages.add("商品名は50字以内で入力してください｡");
 		}
+
+		// 単価チェック
 		int intPriceToChange = 0;
 		if ("".equals(stringPriceToChange)) {
 			errorMessages.add("単価を入力してください");
@@ -90,16 +98,20 @@ public class EditProduct extends HttpServlet {
 			}
 		}
 		if (errorMessages.size() != 0) {
+			// エラーありの場合、自画面に遷移してエラーメッセージを表示
 			Product productDataToChange = new Product();
 			productDataToChange.setProductName(productNameToChange);
 			productDataToChange.setPrice(intPriceToChange);
 			request.setAttribute("productDataToChange", productDataToChange);
 			request.setAttribute("errorMessages", errorMessages);
+			// CSRF対策
 			String newToken = UUID.randomUUID().toString();
 			request.getSession().setAttribute("csrfToken", newToken);
 			request.setAttribute("csrfToken", newToken);
+
 			request.getRequestDispatcher("/WEB-INF/view/editProduct.jsp").forward(request, response);
 		} else {
+			// エラーなしの場合、変更または削除を実行し、PRGパターンで商品検索画面にリダイレクト
 			if (edit.equals("変更")) {
 				dao.update(productCodeToChange, productNameToChange, intPriceToChange);
 			} else if (edit.equals("削除")) {

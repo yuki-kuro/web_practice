@@ -108,7 +108,7 @@ JSP の全出力箇所で JSTL の `<c:out>` を使用。HTMLの特殊文字を�
 ### 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/<your-username>/web_practice.git
+git clone https://github.com/yuki-kuro/web_practice.git
 cd web_practice
 ```
 
